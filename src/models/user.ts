@@ -3,6 +3,7 @@ import mongoose, { InferSchemaType, Schema, model } from "mongoose";
 const userSchema = new Schema(
   {
     cpf: { type: String, unique: true, sparse: true },
+    username: { type: String, required: true, unique: true, sparse: true },
     email: { type: String, unique: true, sparse: true, select: false },
     password: { type: String, select: false },
     googleId: { type: String, unique: true, sparse: true, select: false },
