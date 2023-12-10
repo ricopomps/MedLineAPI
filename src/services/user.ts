@@ -13,7 +13,7 @@ export interface IUserService {
 
   signUp(body: SignUpBody): Promise<User>;
 
-  findUserByUsername(username: string): Promise<User | null>;
+  findUserBycpf(cpf: string): Promise<User | null>;
 
   updateUser(
     userId: mongoose.Types.ObjectId,
@@ -39,14 +39,14 @@ export default class UserService implements IUserService {
   async signUp({
     email,
     password: passwordRaw,
-    username,
+    cpf,
+    name,
     verificationCode,
+    userType,
   }: SignUpBody) {
-    const existingUsername = await this.userRepository.findUserByUsername(
-      email
-    );
+    const existingcpf = await this.userRepository.findUserBycpf(cpf);
 
-    if (existingUsername) throw createHttpError(409, "Username already taken");
+    if (existingcpf) throw createHttpError(409, "cpf already taken");
 
     const emailVerificationToken =
       await this.emailVerificationTokenRepository.findVerificationToken(
@@ -60,35 +60,26 @@ export default class UserService implements IUserService {
     const passwordHashed = await bcrypt.hash(passwordRaw, 10);
 
     const newUser = await this.userRepository.createUser(
-      username,
+      cpf,
       email,
+      name,
+      userType,
       passwordHashed
     );
 
     return newUser;
   }
 
-  async findUserByUsername(username: string): Promise<User | null> {
-    return await this.userRepository.findUserByUsername(username);
+  async findUserBycpf(cpf: string): Promise<User | null> {
+    return await this.userRepository.findUserBycpf(cpf);
   }
 
   async updateUser(
     userId: mongoose.Types.ObjectId,
-    { username, displayName, about }: UpdateUserBody
+    { name }: UpdateUserBody
   ): Promise<User> {
-    if (username) {
-      const existingUsername = await this.userRepository.findUserByUsername(
-        username
-      );
-
-      if (existingUsername)
-        throw createHttpError(409, "Username already taken");
-    }
-
     const updatedUser = await this.userRepository.updateUser(userId, {
-      username,
-      displayName,
-      about,
+      name,
     });
 
     return updatedUser;

@@ -1,12 +1,41 @@
 import * as yup from "yup";
+import { UserType } from "../models/user";
 
-const usernameSchema = yup
+const cpfSchema = yup
   .string()
-  .max(20, "Must be 20 characters or less")
-  .matches(
-    /^[a-zA-Z0-9_]*$/,
-    "Only letters, numbers and underscores are allowed"
-  );
+  .required("CPF obrigatório")
+  .test("is-valid-cpf", "CPF inválido", (value) => {
+    return isValidCPF(value);
+  })
+  .length(11, "CPF deve ter 11 caracteres");
+
+function isValidCPF(cpf: string) {
+  const numbers = cpf.split("").map(Number);
+
+  if (new Set(numbers).size === 1) {
+    return false;
+  }
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += numbers[i] * (10 - i);
+  }
+  let mod = sum % 11;
+  const firstDigit = mod < 2 ? 0 : 11 - mod;
+
+  if (firstDigit !== numbers[9]) {
+    return false;
+  }
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += numbers[i] * (11 - i);
+  }
+  mod = sum % 11;
+  const secondDigit = mod < 2 ? 0 : 11 - mod;
+
+  return secondDigit === numbers[10];
+}
 
 const emailSchema = yup.string().email("Please enter a valid email address");
 
@@ -15,16 +44,20 @@ const passwordSchema = yup
   .matches(/^(?!.* )/, "Must not contain any whitespaces")
   .min(6, "Must be at least 6 characters long");
 
-const displayNameSchema = yup.string().max(20);
+const displayNameSchema = yup.string().max(50);
 
-const aboutSchema = yup.string().max(160);
+const userTypeSchema = yup
+  .string()
+  .oneOf(Object.values(UserType), "Invalid user type");
 
 export const signUpSchema = yup.object({
   body: yup.object({
-    username: usernameSchema.required(),
+    cpf: cpfSchema.required(),
     email: emailSchema.required(),
+    name: displayNameSchema.required("Nome é obrigatório"),
     password: passwordSchema.required(),
     verificationCode: yup.string().required(),
+    userType: userTypeSchema.required(),
   }),
 });
 
@@ -32,9 +65,7 @@ export type SignUpBody = yup.InferType<typeof signUpSchema>["body"];
 
 export const updateUserSchema = yup.object({
   body: yup.object({
-    username: usernameSchema,
-    displayName: displayNameSchema,
-    about: aboutSchema,
+    name: displayNameSchema,
   }),
 });
 

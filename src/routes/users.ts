@@ -26,7 +26,7 @@ router.patch(
   UsersController.updateUser
 );
 
-router.get("/profile/:username", UsersController.getUserByUsername);
+router.get("/profile/:cpf", UsersController.getUserBycpf);
 
 router.post(
   "/signup",

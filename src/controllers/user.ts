@@ -36,13 +36,22 @@ export const signUp: RequestHandler<
   SignUpBody,
   unknown
 > = async (req, res, next) => {
-  const { username, email, password: passwordRaw, verificationCode } = req.body;
+  const {
+    cpf,
+    email,
+    name,
+    password: passwordRaw,
+    verificationCode,
+    userType,
+  } = req.body;
   try {
     const newUser = await userService.signUp({
-      username,
+      cpf,
       email,
+      name,
       password: passwordRaw,
       verificationCode,
+      userType,
     });
 
     req.logIn(newUser, (error) => {
@@ -61,10 +70,10 @@ export const logOut: RequestHandler = (req, res) => {
   });
 };
 
-export const getUserByUsername: RequestHandler = async (req, res, next) => {
+export const getUserBycpf: RequestHandler = async (req, res, next) => {
   try {
-    const { username } = req.params;
-    const user = await userService.findUserByUsername(username);
+    const { cpf } = req.params;
+    const user = await userService.findUserBycpf(cpf);
 
     if (!user) throw createHttpError(404, "User not found");
 
@@ -80,15 +89,13 @@ export const updateUser: RequestHandler<
   UpdateUserBody,
   unknown
 > = async (req, res, next) => {
-  const { username, displayName, about } = req.body;
+  const { name } = req.body;
   const authenticatedUser = req.user;
   try {
     assertIsDefined(authenticatedUser);
 
     const updatedUser = await userService.updateUser(authenticatedUser._id, {
-      username,
-      displayName,
-      about,
+      name,
     });
 
     res.status(200).json(updatedUser);

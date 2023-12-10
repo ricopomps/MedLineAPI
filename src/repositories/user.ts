@@ -1,6 +1,6 @@
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
-import UserModel, { User } from "../models/user";
+import UserModel, { User, UserType } from "../models/user";
 import { UpdateUserBody } from "../validation/users";
 
 export interface IUserRepository {
@@ -9,17 +9,19 @@ export interface IUserRepository {
     extraFields?: string
   ): Promise<User>;
 
-  findUserByUsername(username: string): Promise<User | null>;
+  findUserBycpf(cpf: string): Promise<User | null>;
 
   createUser(
-    username: string,
+    cpf: string,
     email: string,
+    name: string,
+    userType: UserType,
     passwordHashed: string
   ): Promise<User>;
 
   updateUser(
     userId: mongoose.Types.ObjectId,
-    { username, displayName, about }: UpdateUserBody,
+    { name }: UpdateUserBody,
     profilePicDestinationPath?: string
   ): Promise<User>;
 }
@@ -35,8 +37,8 @@ export default class UserRepository implements IUserRepository {
     return user;
   }
 
-  async findUserByUsername(username: string): Promise<User | null> {
-    const user = await UserModel.findOne({ username })
+  async findUserBycpf(cpf: string): Promise<User | null> {
+    const user = await UserModel.findOne({ cpf })
       .collation({
         locale: "en",
         strength: 2,
@@ -46,11 +48,19 @@ export default class UserRepository implements IUserRepository {
     return user;
   }
 
-  async createUser(username: string, email: string, passwordHashed: string) {
+  async createUser(
+    cpf: string,
+    email: string,
+    name: string,
+    userType: UserType,
+    passwordHashed: string
+  ) {
     const result = await UserModel.create({
-      username,
-      displayName: username,
+      cpf,
+      displayName: cpf,
       email,
+      name,
+      userType,
       password: passwordHashed,
     });
 
@@ -62,16 +72,14 @@ export default class UserRepository implements IUserRepository {
 
   async updateUser(
     userId: mongoose.Types.ObjectId,
-    { username, displayName, about }: UpdateUserBody,
+    { name }: UpdateUserBody,
     profilePicDestinationPath?: string
   ): Promise<User> {
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
       {
         $set: {
-          ...(username && { username }),
-          ...(displayName && { displayName }),
-          ...(about && { about }),
+          ...(name && { name }),
           ...(profilePicDestinationPath && {
             profilePicUrl: `${profilePicDestinationPath}?lastupdated=${Date.now()}`,
           }),
