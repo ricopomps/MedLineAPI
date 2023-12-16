@@ -1,8 +1,8 @@
 import crypto from "crypto";
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
-import QueueModel from "../models/queue";
 import mongoose from "mongoose";
+import QueueModel from "../models/queue";
 
 interface createQueueBody {
   doctorId: mongoose.Types.ObjectId;
@@ -23,7 +23,7 @@ export const createQueue: RequestHandler<
       doctorId,
     });
 
-    return res.status(201).json({ queue: newQueue });
+    return res.status(201).json(newQueue);
   } catch (error) {
     next(error);
   }
@@ -45,7 +45,7 @@ export const getQueue: RequestHandler<
       code,
     });
 
-    return res.status(200).json({ queue });
+    return res.status(200).json(queue);
   } catch (error) {
     next(error);
   }
@@ -74,6 +74,38 @@ export const addToQueue: RequestHandler<
     queue.users = [...queue.users, userId];
     await queue.save();
     return res.status(200).json({ queue });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAllQueuesCodes: RequestHandler = async (req, res, next) => {
+  try {
+    const results = await QueueModel.find().select("code").exec();
+    console.log(results);
+    const codes = results.map((post) => post.code);
+    res.status(200).json(codes);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface getQueuesByUserParams {
+  userId?: string;
+}
+
+export const getQueuesByUser: RequestHandler<
+  getQueuesByUserParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const queues = await QueueModel.find({
+      $or: [{ users: { $in: [userId] } }, { doctorId: userId }],
+    }).exec();
+    res.status(200).json(queues);
   } catch (error) {
     next(error);
   }

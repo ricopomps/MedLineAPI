@@ -10,6 +10,8 @@ router.post(
   QueuesController.createQueue
 );
 
+router.get("/codes", QueuesController.getAllQueuesCodes);
+
 router.get(
   "/:code",
   // requiresAuth,
@@ -21,4 +23,11 @@ router.post(
   // requiresAuth,
   QueuesController.addToQueue
 );
+
+router.get(
+  "/user/:userId",
+  // requiresAuth,
+  QueuesController.getQueuesByUser
+);
+
 export default router;
