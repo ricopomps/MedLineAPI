@@ -9,6 +9,7 @@ import "./config/passport";
 import sessionConfig from "./config/session";
 import env from "./env";
 import errorHandler from "./middlewares/errorHandler";
+import userRoutes from "./routes/users";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(passport.authenticate("session"));
 
 // app.use("/users", userRoutes);
 app.get("/", (req, res) => res.json({ message: "working" }));
+app.use("/users", userRoutes);
 
 app.use((req, res, next) => next(createHttpError(404, "Endpoint not found")));
 

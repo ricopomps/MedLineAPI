@@ -17,9 +17,9 @@ passport.deserializeUser((userId: string, cb) => {
 });
 
 passport.use(
-  new LocalStrategy(async (username, password, cb) => {
+  new LocalStrategy(async (cpf, password, cb) => {
     try {
-      const existingUser = await UserModel.findOne({ username })
+      const existingUser = await UserModel.findOne({ cpf })
         .select("+email +password")
         .exec();
 
