@@ -55,7 +55,10 @@ export default class UserService implements IUserService {
       );
 
     if (!emailVerificationToken)
-      throw createHttpError(400, "Verification code incorrect or expired.");
+      throw createHttpError(
+        400,
+        "Código de verificação incorreto ou expirado."
+      );
 
     const passwordHashed = await bcrypt.hash(passwordRaw, 10);
 

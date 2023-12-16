@@ -37,12 +37,12 @@ function isValidCPF(cpf: string) {
   return secondDigit === numbers[10];
 }
 
-const emailSchema = yup.string().email("Please enter a valid email address");
+const emailSchema = yup.string().email("Inserir e-mail válido");
 
 const passwordSchema = yup
   .string()
-  .matches(/^(?!.* )/, "Must not contain any whitespaces")
-  .min(6, "Must be at least 6 characters long");
+  .matches(/^(?!.* )/, "Senha não pode ter espaços em branco")
+  .min(6, "Senha deve ter no mínimo 6 caracteres");
 
 const displayNameSchema = yup.string().max(50);
 
@@ -56,7 +56,7 @@ export const signUpSchema = yup.object({
     email: emailSchema.required(),
     name: displayNameSchema.required("Nome é obrigatório"),
     password: passwordSchema.required(),
-    verificationCode: yup.string().required(),
+    verificationCode: yup.string().required("Código é obrigatório"),
     userType: userTypeSchema.required(),
   }),
 });
