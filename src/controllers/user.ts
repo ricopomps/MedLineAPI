@@ -8,6 +8,7 @@ import UserService, { IUserService } from "../services/user";
 import assertIsDefined from "../utils/assertIsDefined";
 import * as Email from "../utils/email";
 // import { destroyAllActiveSesionsForUser } from "../utils/auth";
+import mongoose from "mongoose";
 import {
   SignUpBody,
   UpdateUserBody,
@@ -74,6 +75,29 @@ export const getUserBycpf: RequestHandler = async (req, res, next) => {
   try {
     const { cpf } = req.params;
     const user = await userService.findUserBycpf(cpf);
+
+    if (!user) throw createHttpError(404, "User not found");
+
+    res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface GetUserByIdParams {
+  userId?: mongoose.Types.ObjectId;
+}
+
+export const getUserById: RequestHandler<
+  GetUserByIdParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    assertIsDefined(userId);
+    const user = await userService.findUserById(userId);
 
     if (!user) throw createHttpError(404, "User not found");
 

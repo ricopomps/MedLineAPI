@@ -15,6 +15,8 @@ export interface IUserService {
 
   findUserBycpf(cpf: string): Promise<User | null>;
 
+  findUserById(userId: mongoose.Types.ObjectId): Promise<User | null>;
+
   updateUser(
     userId: mongoose.Types.ObjectId,
     body: UpdateUserBody
@@ -75,6 +77,10 @@ export default class UserService implements IUserService {
 
   async findUserBycpf(cpf: string): Promise<User | null> {
     return await this.userRepository.findUserBycpf(cpf);
+  }
+
+  async findUserById(userId: mongoose.Types.ObjectId): Promise<User | null> {
+    return await this.userRepository.findUserById(userId);
   }
 
   async updateUser(

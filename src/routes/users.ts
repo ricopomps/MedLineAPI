@@ -27,6 +27,7 @@ router.patch(
 );
 
 router.get("/profile/:cpf", UsersController.getUserBycpf);
+router.get("/:userId", UsersController.getUserById);
 
 router.post(
   "/signup",
