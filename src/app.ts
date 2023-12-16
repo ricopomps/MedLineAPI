@@ -10,7 +10,7 @@ import sessionConfig from "./config/session";
 import env from "./env";
 import errorHandler from "./middlewares/errorHandler";
 import userRoutes from "./routes/users";
-
+import queueRoutes from "./routes/queues";
 const app = express();
 
 if (env.NODE_ENV === "production") {
@@ -36,6 +36,7 @@ app.use(passport.authenticate("session"));
 // app.use("/users", userRoutes);
 app.get("/", (req, res) => res.json({ message: "working" }));
 app.use("/users", userRoutes);
+app.use("/queues", queueRoutes);
 
 app.use((req, res, next) => next(createHttpError(404, "Endpoint not found")));
 
