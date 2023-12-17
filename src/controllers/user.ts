@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
-import UserModel from "../models/user";
+import UserModel, { UserType } from "../models/user";
 // import PasswordResetToken from "../models/passwordResetToken";
 import EmailVerificationToken from "../models/emailVerificationToken";
 import UserService, { IUserService } from "../services/user";
@@ -44,6 +44,7 @@ export const signUp: RequestHandler<
     password: passwordRaw,
     verificationCode,
     userType,
+    clinicDocument,
   } = req.body;
   try {
     const newUser = await userService.signUp({
@@ -53,6 +54,7 @@ export const signUp: RequestHandler<
       password: passwordRaw,
       verificationCode,
       userType,
+      clinicDocument,
     });
 
     req.logIn(newUser, (error) => {
@@ -155,6 +157,26 @@ export const requestEmailVerificationCode: RequestHandler<
     await Email.sendVerificationCode(email, verificationCode);
 
     res.sendStatus(200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface GetUsersParams {
+  userType?: UserType;
+}
+
+export const getUsers: RequestHandler<
+  GetUsersParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { userType } = req.params;
+    const users = await userService.getUsers(userType);
+
+    res.status(200).json(users);
   } catch (error) {
     next(error);
   }

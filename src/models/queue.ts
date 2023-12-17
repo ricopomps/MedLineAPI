@@ -2,9 +2,14 @@ import mongoose, { InferSchemaType, Schema, model } from "mongoose";
 
 const queueSchema = new Schema(
   {
-    code: { type: String, unique: true, required: true, sparse: true },
+    code: { type: String, unique: true, required: true },
     users: [{ type: Schema.Types.ObjectId, ref: "User" }],
     doctorId: { type: Schema.Types.ObjectId, ref: "User" },
+    clinicDocument: {
+      type: String,
+      unique: true,
+      required: true,
+    },
   },
   { timestamps: true }
 );

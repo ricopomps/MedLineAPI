@@ -27,6 +27,9 @@ router.patch(
 );
 
 router.get("/profile/:cpf", UsersController.getUserBycpf);
+
+router.get("/userType/:userType", UsersController.getUsers);
+
 router.get("/:userId", UsersController.getUserById);
 
 router.post(

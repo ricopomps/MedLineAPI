@@ -1,12 +1,15 @@
 import express from "express";
 import * as QueuesController from "../controllers/queue";
-// import requiresAuth from "../middlewares/requiresAuth";
+import requiresAuth from "../middlewares/requiresAuth";
+import validateRequestSchema from "../middlewares/validateRequestSchema";
+import { createQueueBodySchema } from "../validation/queues";
 
 const router = express.Router();
 
 router.post(
   "/",
-  // requiresAuth,
+  requiresAuth,
+  validateRequestSchema(createQueueBodySchema),
   QueuesController.createQueue
 );
 
@@ -24,10 +27,12 @@ router.post(
   QueuesController.addToQueue
 );
 
+router.get("/user/:userId", requiresAuth, QueuesController.getQueuesByUser);
+
 router.get(
-  "/user/:userId",
-  // requiresAuth,
-  QueuesController.getQueuesByUser
+  "/recepcionista/:clinicDocument",
+  requiresAuth,
+  QueuesController.getQueuesRecepcionista
 );
 
 export default router;

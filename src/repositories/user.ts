@@ -16,7 +16,8 @@ export interface IUserRepository {
     email: string,
     name: string,
     userType: UserType,
-    passwordHashed: string
+    passwordHashed: string,
+    clinicDocument?: string
   ): Promise<User>;
 
   updateUser(
@@ -24,6 +25,8 @@ export interface IUserRepository {
     { name }: UpdateUserBody,
     profilePicDestinationPath?: string
   ): Promise<User>;
+
+  getUsers(userType?: UserType): Promise<User[]>;
 }
 
 export default class UserRepository implements IUserRepository {
@@ -53,7 +56,8 @@ export default class UserRepository implements IUserRepository {
     email: string,
     name: string,
     userType: UserType,
-    passwordHashed: string
+    passwordHashed: string,
+    clinicDocument?: string
   ) {
     const result = await UserModel.create({
       cpf,
@@ -62,6 +66,7 @@ export default class UserRepository implements IUserRepository {
       name,
       userType,
       password: passwordHashed,
+      clinicDocument,
     });
 
     const userWithoutPassword = result.toObject();
@@ -89,5 +94,12 @@ export default class UserRepository implements IUserRepository {
     ).exec();
 
     return updatedUser as User;
+  }
+
+  async getUsers(userType?: UserType): Promise<User[]> {
+    console.log("hetUsers", userType);
+    const users = await UserModel.find({ userType }).exec();
+
+    return users;
   }
 }

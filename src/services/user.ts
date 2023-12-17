@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
-import { User } from "../models/user";
+import { User, UserType } from "../models/user";
 import EmailVerificationTokenRepository, {
   IEmailVerificationTokenRepository,
 } from "../repositories/emailVerificationToken";
@@ -21,6 +21,8 @@ export interface IUserService {
     userId: mongoose.Types.ObjectId,
     body: UpdateUserBody
   ): Promise<User>;
+
+  getUsers(userType?: UserType): Promise<User[]>;
 }
 
 export default class UserService implements IUserService {
@@ -45,6 +47,7 @@ export default class UserService implements IUserService {
     name,
     verificationCode,
     userType,
+    clinicDocument,
   }: SignUpBody) {
     const existingcpf = await this.userRepository.findUserBycpf(cpf);
 
@@ -69,7 +72,8 @@ export default class UserService implements IUserService {
       email,
       name,
       userType,
-      passwordHashed
+      passwordHashed,
+      clinicDocument
     );
 
     return newUser;
@@ -92,5 +96,12 @@ export default class UserService implements IUserService {
     });
 
     return updatedUser;
+  }
+
+  async getUsers(userType?: UserType): Promise<User[]> {
+    console.log("getUsers");
+    const users = await this.userRepository.getUsers(userType);
+
+    return users;
   }
 }

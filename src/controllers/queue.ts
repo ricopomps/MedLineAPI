@@ -3,24 +3,22 @@ import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
 import QueueModel from "../models/queue";
-
-interface createQueueBody {
-  doctorId: mongoose.Types.ObjectId;
-}
+import { CreateQueueBody } from "../validation/queues";
 
 export const createQueue: RequestHandler<
   unknown,
   unknown,
-  createQueueBody,
+  CreateQueueBody,
   unknown
 > = async (req, res, next) => {
-  const { doctorId } = req.body;
+  const { doctorId, clinicDocument } = req.body;
   try {
     const code = crypto.randomInt(100000, 999999).toString();
 
     const newQueue = await QueueModel.create({
       code,
       doctorId,
+      clinicDocument,
     });
 
     return res.status(201).json(newQueue);
@@ -90,12 +88,12 @@ export const getAllQueuesCodes: RequestHandler = async (req, res, next) => {
   }
 };
 
-interface getQueuesByUserParams {
+interface GetQueuesByUserParams {
   userId?: string;
 }
 
 export const getQueuesByUser: RequestHandler<
-  getQueuesByUserParams,
+  GetQueuesByUserParams,
   unknown,
   unknown,
   unknown
@@ -104,6 +102,27 @@ export const getQueuesByUser: RequestHandler<
     const { userId } = req.params;
     const queues = await QueueModel.find({
       $or: [{ users: { $in: [userId] } }, { doctorId: userId }],
+    }).exec();
+    res.status(200).json(queues);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface GetQueuesRecepcionistaParams {
+  clinicDocument?: string;
+}
+
+export const getQueuesRecepcionista: RequestHandler<
+  GetQueuesRecepcionistaParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { clinicDocument } = req.params;
+    const queues = await QueueModel.find({
+      clinicDocument,
     }).exec();
     res.status(200).json(queues);
   } catch (error) {
