@@ -27,6 +27,12 @@ router.post(
   QueuesController.addToQueue
 );
 
+router.delete(
+  "/user/:code",
+  // requiresAuth,
+  QueuesController.removeFromQueue
+);
+
 router.get("/user/:userId", requiresAuth, QueuesController.getQueuesByUser);
 
 router.get(

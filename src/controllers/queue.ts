@@ -39,11 +39,21 @@ export const getQueue: RequestHandler<
 > = async (req, res, next) => {
   const { code } = req.params;
   try {
-    const queue = await QueueModel.findOne({
-      code,
-    });
+    const queue = await QueueModel.aggregate([
+      {
+        $match: { code },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+    ]);
 
-    return res.status(200).json(queue);
+    return res.status(200).json(queue[0]);
   } catch (error) {
     next(error);
   }
@@ -121,10 +131,49 @@ export const getQueuesRecepcionista: RequestHandler<
 > = async (req, res, next) => {
   try {
     const { clinicDocument } = req.params;
-    const queues = await QueueModel.find({
-      clinicDocument,
-    }).exec();
+    const queues = await QueueModel.aggregate([
+      {
+        $match: { clinicDocument },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+    ]);
     res.status(200).json(queues);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface RemoveFromeueParams {
+  code?: string;
+}
+
+interface RemoveFromQueueBody {
+  userId: mongoose.Types.ObjectId;
+}
+
+export const removeFromQueue: RequestHandler<
+  RemoveFromeueParams,
+  unknown,
+  RemoveFromQueueBody,
+  unknown
+> = async (req, res, next) => {
+  const { userId } = req.body;
+  const { code } = req.params;
+  try {
+    const queue = await QueueModel.findOne({ code });
+
+    if (!queue) throw createHttpError(404, "Queue not found");
+    queue.users = queue.users.filter((user) => !user._id.equals(userId));
+
+    await queue.save();
+    return res.sendStatus(204);
   } catch (error) {
     next(error);
   }
