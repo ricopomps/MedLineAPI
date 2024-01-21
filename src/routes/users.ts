@@ -30,6 +30,9 @@ router.get("/profile/:cpf", UsersController.getUserBycpf);
 
 router.get("/userType/:userType", UsersController.getUsers);
 
+router.get("/clinic/:clinicDocument", UsersController.getStaff);
+router.post("/clinic/:clinicDocument", UsersController.addStaff);
+
 router.get("/:userId", UsersController.getUserById);
 
 router.post(

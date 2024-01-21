@@ -41,4 +41,12 @@ router.get(
   QueuesController.getQueuesRecepcionista
 );
 
+router.get("/doctor/:userId", requiresAuth, QueuesController.getQueuesDoctor);
+
+router.delete(
+  "/endAppointment/:queueId",
+  requiresAuth,
+  QueuesController.endAppointment
+);
+
 export default router;

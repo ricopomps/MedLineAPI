@@ -11,7 +11,7 @@ const userSchema = new Schema(
     cpf: { type: String, unique: true, sparse: true },
     name: { type: String },
     email: { type: String, unique: true, sparse: true, select: false },
-    clinicDocument: { type: String },
+    clinicDocument: [{ type: String }],
     password: { type: String, select: false },
     userType: {
       type: String,

@@ -14,7 +14,7 @@ export const createQueue: RequestHandler<
   const { doctorId, clinicDocument } = req.body;
   try {
     const code = crypto.randomInt(100000, 999999).toString();
-
+    console.log("AHHHHHHHHHHHHHHHHHHHHHH", code, clinicDocument);
     const newQueue = await QueueModel.create({
       code,
       doctorId,
@@ -174,6 +174,69 @@ export const removeFromQueue: RequestHandler<
 
     await queue.save();
     return res.sendStatus(204);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface GetQueuesDoctorParams {
+  userId?: string;
+}
+
+export const getQueuesDoctor: RequestHandler<
+  GetQueuesDoctorParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const queues = await QueueModel.aggregate([
+      {
+        $match: { doctorId: new mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+    ]);
+    res.status(200).json(queues);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface EndAppointmentParams {
+  queueId?: string;
+}
+
+export const endAppointment: RequestHandler<
+  EndAppointmentParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { queueId } = req.params;
+
+    const queue = await QueueModel.findById(queueId);
+
+    if (!queue) {
+      return res.status(404).json({ error: "Queue not found" });
+    }
+
+    if (queue.users && queue.users.length > 0) {
+      queue.users = queue.users.slice(1);
+    }
+
+    await queue.save();
+
+    res.status(200).json(queue);
   } catch (error) {
     next(error);
   }

@@ -182,6 +182,51 @@ export const getUsers: RequestHandler<
   }
 };
 
+interface GetStaffParams {
+  clinicDocument?: string;
+}
+
+export const getStaff: RequestHandler<
+  GetStaffParams,
+  unknown,
+  unknown,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { clinicDocument } = req.params;
+    if (!clinicDocument) throw Error("Clinic document is required");
+    const staff = await userService.getStaff(clinicDocument);
+    res.status(200).json(staff);
+  } catch (error) {
+    next(error);
+  }
+};
+
+interface AddStaffParams {
+  clinicDocument?: string;
+}
+
+interface AddStaffBody {
+  userId: string;
+}
+
+export const addStaff: RequestHandler<
+  AddStaffParams,
+  unknown,
+  AddStaffBody,
+  unknown
+> = async (req, res, next) => {
+  try {
+    const { clinicDocument } = req.params;
+    const { userId } = req.body;
+    if (!clinicDocument) throw Error("Clinic document is required");
+    const staff = await userService.addStaff(userId, clinicDocument);
+    res.status(200).json(staff);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // export const requestResetPasswordCode: RequestHandler<
 //   unknown,
 //   unknown,
