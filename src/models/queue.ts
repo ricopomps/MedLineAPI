@@ -7,7 +7,6 @@ const queueSchema = new Schema(
     doctorId: { type: Schema.Types.ObjectId, ref: "User" },
     clinicDocument: {
       type: String,
-      unique: true,
       required: true,
     },
   },

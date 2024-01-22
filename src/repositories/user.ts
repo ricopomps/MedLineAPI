@@ -27,6 +27,10 @@ export interface IUserRepository {
   ): Promise<User>;
 
   getUsers(userType?: UserType): Promise<User[]>;
+
+  getStaff(clinicDocument: string): Promise<User[]>;
+
+  addStaff(userId: string, clinicDocument: string): Promise<User>;
 }
 
 export default class UserRepository implements IUserRepository {
@@ -66,7 +70,7 @@ export default class UserRepository implements IUserRepository {
       name,
       userType,
       password: passwordHashed,
-      clinicDocument,
+      clinicDocument: [clinicDocument],
     });
 
     const userWithoutPassword = result.toObject();
@@ -101,5 +105,40 @@ export default class UserRepository implements IUserRepository {
     const users = await UserModel.find({ userType }).exec();
 
     return users;
+  }
+
+  async getStaff(clinicDocument: string): Promise<User[]> {
+    const staff = await UserModel.find({
+      clinicDocument: { $in: [clinicDocument] },
+    }).exec();
+
+    return staff;
+  }
+
+  async addStaff(userId: string, clinicDocument: string): Promise<User> {
+    const staff = await UserModel.findById(userId);
+
+    if (!staff) throw createHttpError(404, "Not found");
+
+    if (
+      staff.userType !== UserType.doctor &&
+      staff.userType !== UserType.recepcionista
+    )
+      throw createHttpError(400, "Can olny add doctor or other staff");
+
+    if (staff.clinicDocument && staff.clinicDocument.includes(clinicDocument))
+      throw createHttpError(400, "User already part of clinic");
+
+    await UserModel.updateOne(
+      {
+        _id: userId,
+        clinicDocument: { $not: { $in: [clinicDocument] } },
+      },
+      {
+        $addToSet: { clinicDocument: clinicDocument },
+      }
+    );
+
+    return staff;
   }
 }

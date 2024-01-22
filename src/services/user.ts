@@ -23,6 +23,10 @@ export interface IUserService {
   ): Promise<User>;
 
   getUsers(userType?: UserType): Promise<User[]>;
+
+  getStaff(clinicDocument: string): Promise<User[]>;
+
+  addStaff(userId: string, clinicDocument: string): Promise<User>;
 }
 
 export default class UserService implements IUserService {
@@ -103,5 +107,17 @@ export default class UserService implements IUserService {
     const users = await this.userRepository.getUsers(userType);
 
     return users;
+  }
+
+  async getStaff(clinicDocument: string): Promise<User[]> {
+    const staff = await this.userRepository.getStaff(clinicDocument);
+
+    return staff;
+  }
+
+  async addStaff(userId: string, clinicDocument: string): Promise<User> {
+    const staff = await this.userRepository.addStaff(userId, clinicDocument);
+
+    return staff;
   }
 }
