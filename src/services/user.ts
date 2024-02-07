@@ -88,7 +88,7 @@ export default class UserService implements IUserService {
   }
 
   async findUserById(userId: mongoose.Types.ObjectId): Promise<User | null> {
-    return await this.userRepository.findUserById(userId);
+    return await this.userRepository.findUserById(userId, "+email");
   }
 
   async updateUser(
