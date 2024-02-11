@@ -14,7 +14,6 @@ export const createQueue: RequestHandler<
   const { doctorId, clinicDocument } = req.body;
   try {
     const code = crypto.randomInt(100000, 999999).toString();
-    console.log("AHHHHHHHHHHHHHHHHHHHHHH", code, clinicDocument);
     const newQueue = await QueueModel.create({
       code,
       doctorId,
@@ -81,7 +80,20 @@ export const addToQueue: RequestHandler<
     if (!queue) throw createHttpError(404, "Queue not found");
     queue.users = [...queue.users, userId];
     await queue.save();
-    return res.status(200).json({ queue });
+    const queueToReturn = await QueueModel.aggregate([
+      {
+        $match: { _id: new mongoose.Types.ObjectId(queue._id) },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+    ]);
+    return res.status(200).json({ queue: queueToReturn[0] });
   } catch (error) {
     next(error);
   }
@@ -90,7 +102,6 @@ export const addToQueue: RequestHandler<
 export const getAllQueuesCodes: RequestHandler = async (req, res, next) => {
   try {
     const results = await QueueModel.find().select("code").exec();
-    console.log(results);
     const codes = results.map((post) => post.code);
     res.status(200).json(codes);
   } catch (error) {
@@ -110,9 +121,24 @@ export const getQueuesByUser: RequestHandler<
 > = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const queues = await QueueModel.find({
-      $or: [{ users: { $in: [userId] } }, { doctorId: userId }],
-    }).exec();
+    const queues = await QueueModel.aggregate([
+      {
+        $match: {
+          $or: [
+            { users: { $in: [new mongoose.Types.ObjectId(userId)] } },
+            { doctorId: new mongoose.Types.ObjectId(userId) },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "users",
+          foreignField: "_id",
+          as: "users",
+        },
+      },
+    ]);
     res.status(200).json(queues);
   } catch (error) {
     next(error);

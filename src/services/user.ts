@@ -103,7 +103,6 @@ export default class UserService implements IUserService {
   }
 
   async getUsers(userType?: UserType): Promise<User[]> {
-    console.log("getUsers");
     const users = await this.userRepository.getUsers(userType);
 
     return users;

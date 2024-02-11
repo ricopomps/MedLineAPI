@@ -101,7 +101,6 @@ export default class UserRepository implements IUserRepository {
   }
 
   async getUsers(userType?: UserType): Promise<User[]> {
-    console.log("hetUsers", userType);
     const users = await UserModel.find({ userType }).exec();
 
     return users;
