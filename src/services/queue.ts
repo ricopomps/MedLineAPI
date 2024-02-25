@@ -12,6 +12,11 @@ export interface IQueueService {
   getUsersFromQueue(queueCode: string): Promise<User[]>;
 
   addUserToQueue(queueCode: string, userId: string): Promise<PopulatedQueue>;
+
+  removeUserFromQueue(
+    queueCode: string,
+    userId: string
+  ): Promise<PopulatedQueue>;
 }
 
 export default class QueueService implements IQueueService {
@@ -45,5 +50,12 @@ export default class QueueService implements IQueueService {
     userId: string
   ): Promise<PopulatedQueue> {
     return await this.queueRepository.addUserToQueue(queueCode, userId);
+  }
+
+  async removeUserFromQueue(
+    queueCode: string,
+    userId: string
+  ): Promise<PopulatedQueue> {
+    return await this.queueRepository.removeUserFromQueue(queueCode, userId);
   }
 }

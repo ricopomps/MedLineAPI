@@ -15,6 +15,7 @@ enum Events {
   queueUsersChanged = "QUEUE_USER_CHANGED",
   userEnteredQueue = "USER_ENTERED_QUEUE",
   userLeftQueue = "USER_LEFT_QUEUE",
+  removeFromQueue = "REMOVE_FROM_QUEUE",
 }
 
 interface OnQueueUser {
@@ -28,13 +29,91 @@ const users: OnQueueUser[] = [];
 
 io.on("connection", (socket) => {
   console.log(`New connection: ${socket.id}`);
+  try {
+    socket.on(
+      Events.enterQueue,
+      async (data: { queueCode: string; userId: string }) => {
+        socket.join(data.queueCode);
 
-  socket.on(
-    Events.enterQueue,
-    async (data: { queueCode: string; userId: string }) => {
+        const queue = await queueService.addUserToQueue(
+          data.queueCode,
+          data.userId
+        );
+        io.to(data.queueCode).emit(Events.queueUsersChanged, {
+          users: queue.users,
+          queueCode: data.queueCode,
+        });
+        io.to(data.queueCode).emit(Events.userEnteredQueue, {
+          queue: queue,
+        });
+      }
+    );
+
+    socket.on(Events.viewQueue, (data) => {
       socket.join(data.queueCode);
 
-      const queue = await queueService.addUserToQueue(
+      const userInQueue = users.find((user) => user.userId === data.userId);
+
+      if (userInQueue) {
+        userInQueue.socket_id = socket.id;
+      } else {
+        users.push({
+          queueCode: data.queueCode,
+          socket_id: socket.id,
+          userId: data.userId,
+          username: data.username,
+        });
+      }
+    });
+
+    socket.on(Events.startAppointment, (data) => {
+      queueService.changeQueueStatus(data.queueCode, QueueStatus.inProgress);
+      io.to(data.queueCode).emit(Events.queueStatusChanged, {
+        queueCode: data.queueCode,
+        status: QueueStatus.inProgress,
+      });
+    });
+
+    socket.on(Events.endAppointment, async (data) => {
+      await queueService.finishAppointment(data.queueCode);
+      io.to(data.queueCode).emit(Events.queueStatusChanged, {
+        queueCode: data.queueCode,
+        status: QueueStatus.done,
+      });
+      const queueUsers = await queueService.getUsersFromQueue(data.queueCode);
+      io.to(data.queueCode).emit(Events.queueUsersChanged, {
+        users: queueUsers,
+        queueCode: data.queueCode,
+      });
+      io.to(data.queueCode).emit(Events.userLeftQueue, {
+        users: queueUsers,
+        queueCode: data.queueCode,
+      });
+    });
+
+    socket.on(Events.setQueueReady, (data) => {
+      queueService.changeQueueStatus(data.queueCode, QueueStatus.ready);
+      io.to(data.queueCode).emit(Events.queueStatusChanged, {
+        queueCode: data.queueCode,
+        status: QueueStatus.ready,
+      });
+    });
+
+    socket.on(Events.setQueueWaiting, async (data) => {
+      queueService.setQueueToWaitingNextAppointment(data.queueCode);
+      io.to(data.queueCode).emit(Events.queueStatusChanged, {
+        queueCode: data.queueCode,
+        status: QueueStatus.waiting,
+      });
+      const queueUsers = await queueService.getUsersFromQueue(data.queueCode);
+      io.to(data.queueCode).emit(Events.queueUsersChanged, {
+        users: queueUsers,
+        queueCode: data.queueCode,
+      });
+    });
+
+    socket.on(Events.removeFromQueue, async (data) => {
+      const queue = await queueService.removeUserFromQueue(
         data.queueCode,
         data.userId
       );
@@ -42,71 +121,12 @@ io.on("connection", (socket) => {
         users: queue.users,
         queueCode: data.queueCode,
       });
-      io.to(data.queueCode).emit(Events.userEnteredQueue, {
-        queue: queue,
-      });
-    }
-  );
-
-  socket.on(Events.viewQueue, (data) => {
-    socket.join(data.queueCode);
-
-    const userInQueue = users.find((user) => user.userId === data.userId);
-
-    if (userInQueue) {
-      userInQueue.socket_id = socket.id;
-    } else {
-      users.push({
+      io.to(data.queueCode).emit(Events.userLeftQueue, {
+        users: queue.users,
         queueCode: data.queueCode,
-        socket_id: socket.id,
-        userId: data.userId,
-        username: data.username,
       });
-    }
-  });
-
-  socket.on(Events.startAppointment, (data) => {
-    queueService.changeQueueStatus(data.queueCode, QueueStatus.inProgress);
-    io.to(data.queueCode).emit(Events.queueStatusChanged, {
-      queueCode: data.queueCode,
-      status: QueueStatus.inProgress,
     });
-  });
-
-  socket.on(Events.endAppointment, async (data) => {
-    await queueService.finishAppointment(data.queueCode);
-    io.to(data.queueCode).emit(Events.queueStatusChanged, {
-      queueCode: data.queueCode,
-      status: QueueStatus.done,
-    });
-    const queueUsers = await queueService.getUsersFromQueue(data.queueCode);
-    io.to(data.queueCode).emit(Events.queueUsersChanged, {
-      users: queueUsers,
-      queueCode: data.queueCode,
-    });
-    io.to(data.queueCode).emit(Events.userLeftQueue, {
-      queueCode: data.queueCode,
-    });
-  });
-
-  socket.on(Events.setQueueReady, (data) => {
-    queueService.changeQueueStatus(data.queueCode, QueueStatus.ready);
-    io.to(data.queueCode).emit(Events.queueStatusChanged, {
-      queueCode: data.queueCode,
-      status: QueueStatus.ready,
-    });
-  });
-
-  socket.on(Events.setQueueWaiting, async (data) => {
-    queueService.setQueueToWaitingNextAppointment(data.queueCode);
-    io.to(data.queueCode).emit(Events.queueStatusChanged, {
-      queueCode: data.queueCode,
-      status: QueueStatus.waiting,
-    });
-    const queueUsers = await queueService.getUsersFromQueue(data.queueCode);
-    io.to(data.queueCode).emit(Events.queueUsersChanged, {
-      users: queueUsers,
-      queueCode: data.queueCode,
-    });
-  });
+  } catch (error) {
+    console.error(error);
+  }
 });

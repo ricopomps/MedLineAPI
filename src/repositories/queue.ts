@@ -16,6 +16,11 @@ export interface IQueueRepository {
   getQueue(queueCode: string): Promise<PopulatedQueue>;
 
   addUserToQueue(queueCode: string, userId: string): Promise<PopulatedQueue>;
+
+  removeUserFromQueue(
+    queueCode: string,
+    userId: string
+  ): Promise<PopulatedQueue>;
 }
 
 export default class QueueRepository implements IQueueRepository {
@@ -56,7 +61,16 @@ export default class QueueRepository implements IQueueRepository {
   }
 
   async getQueue(queueCode: string) {
-    const queue = await QueueModel.aggregate([
+    const raw = await QueueModel.findOne({ code: queueCode });
+    const usersOrder = raw?.users.filter(
+      (id) =>
+        !id.equals(
+          new mongoose.Types.ObjectId("000000000000000000000000") ||
+            id !== new mongoose.Types.ObjectId("000000000000000000000000")
+        )
+    );
+
+    const queueAggregate = await QueueModel.aggregate([
       {
         $match: { code: queueCode },
       },
@@ -69,7 +83,17 @@ export default class QueueRepository implements IQueueRepository {
         },
       },
     ]);
-    return queue[0];
+    const queue: PopulatedQueue = queueAggregate[0];
+
+    const mapUsers = usersOrder?.map((userId) => {
+      const index = queue.users.findIndex((queueUser) =>
+        queueUser._id.equals(userId)
+      );
+      const user = queue.users[index];
+      return user;
+    });
+    queue.users = mapUsers?.filter((user) => user) ?? [];
+    return queue;
   }
 
   async addUserToQueue(
@@ -79,6 +103,17 @@ export default class QueueRepository implements IQueueRepository {
     const queue = await QueueModel.findOne({ code: queueCode });
     if (!queue) throw createHttpError(404, "Queue not found");
     queue.users = [...queue.users, new mongoose.Types.ObjectId(userId)];
+    await queue.save();
+    return this.getQueue(queueCode);
+  }
+
+  async removeUserFromQueue(
+    queueCode: string,
+    userId: string
+  ): Promise<PopulatedQueue> {
+    const queue = await QueueModel.findOne({ code: queueCode });
+    if (!queue) throw createHttpError(404, "Queue not found");
+    queue.users = queue.users.filter((user) => user._id.toString() !== userId);
     await queue.save();
     return this.getQueue(queueCode);
   }
