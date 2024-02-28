@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
-import QueueModel from "../models/queue";
+import QueueModel, { PopulatedQueue, Queue } from "../models/queue";
 import { CreateQueueBody } from "../validation/queues";
 
 export const createQueue: RequestHandler<
@@ -218,7 +218,7 @@ export const getQueuesDoctor: RequestHandler<
   try {
     const { userId } = req.params;
 
-    const queues = await QueueModel.aggregate([
+    const queuesAggregate: PopulatedQueue[] = await QueueModel.aggregate([
       {
         $match: { doctorId: new mongoose.Types.ObjectId(userId) },
       },
@@ -231,6 +231,44 @@ export const getQueuesDoctor: RequestHandler<
         },
       },
     ]);
+
+    const queues: Queue[] = [];
+
+    const rawQueues = await QueueModel.find({
+      _id: {
+        $in: [queuesAggregate.map((queue) => queue._id)],
+      },
+    });
+
+    queuesAggregate.forEach((queueAgg) => {
+      const currentQueue = rawQueues.find((queue) =>
+        queue._id.equals(queueAgg._id)
+      );
+
+      if (currentQueue) {
+        const usersOrder = currentQueue.users.filter(
+          (id) =>
+            !id.equals(
+              new mongoose.Types.ObjectId("000000000000000000000000") ||
+                id !== new mongoose.Types.ObjectId("000000000000000000000000")
+            )
+        );
+
+        const mapUsers = usersOrder?.map((userId) => {
+          const index = queueAgg.users.findIndex((queueUser) =>
+            queueUser._id.equals(userId)
+          );
+          const user = queueAgg.users[index];
+          return user;
+        });
+
+        queues.push({
+          ...queueAgg,
+          users: mapUsers?.filter((user) => user) ?? [],
+        });
+      }
+    });
+
     res.status(200).json(queues);
   } catch (error) {
     next(error);
